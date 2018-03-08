@@ -10,9 +10,9 @@
 .def temp = r16
 .def led = r20
 
-.equ START = 0
 .equ INTERRUPT = INT1
 .equ BUTTON = 0b00001000 ; Третья кнопка для INT1, для INT2 тут нужно поставить вторую
+.equ TARGET_LED = ~0b00000001 ; Будем включать первый светодиод
 
 
 .org $000
@@ -72,6 +72,11 @@ INIT:
 MAIN:
 	rjmp MAIN
 
+; Обработчик нажатия кнопки
 BUTTON_PRESSED:
+	; Включаем светодиод
+	ldi led, TARGET_LED
+	out PORTB, led
+
 	reti
 
