@@ -7,9 +7,11 @@
 
 .def temp = r16
 .def led = r20
+.def timerCount = r21
 
 .equ TARGET_BUTTON = 3 ; Третья кнопка
 .equ TARGET_LED = ~0b00000001 ; Будем включать первый светодиод
+.equ TIMER_COUNT = 160 ; раз, т.к. 40мс задержка => 4000 (Гц, частота процессора) / (40 / 1000 (Гц)))
 
 
 .org $000
@@ -21,7 +23,7 @@
 	reti
 	reti
 	reti
-	rjmp ON_TIMER ; T/C0 OVF
+	rjmp ON_TIMER_OVERFLOW ; T/C0 OVF
 
 ; Инициализация
 INIT:
@@ -68,9 +70,12 @@ MAIN:
 
 ; Обработчик нажатия кнопки
 ON_BUTTON_PRESSED:
-	; Сбрасываем счётчик timer0
+	; Сбрасываем внутренний счётчик timer0
 	clr temp
 	out TCNT0, temp
+
+	; Сбрасываем счётчик повторений таймера
+	ldi timerCount, TIMER_COUNT
 
 	; Включаем timer0 без масштабирования
 	ldi temp, (1 << CS00)
@@ -83,7 +88,21 @@ ON_BUTTON_PRESSED:
 	ret
 
 ; Обработчик переполнения счётчика таймера
-ON_TIMER:
+ON_TIMER_OVERFLOW:
+	; Уменьшаем счётчик повторений
+	dec timerCount
+
+	; Если timerCount != 0, то завершаем обработку прерывания
+	clr temp
+	cpse timerCount, temp
+	reti
+
+	; Иначе выключаем лампочку и таймер
+	rjmp ON_TIMER_DONE
+	reti
+
+; Таймер отсчитал 40мс
+ON_TIMER_DONE:
 	; Выключаем лампочки
 	ser led
 	out PORTB, led
@@ -92,5 +111,5 @@ ON_TIMER:
 	clr temp
 	out TCCR0, temp
 
-	reti
+	ret
 
