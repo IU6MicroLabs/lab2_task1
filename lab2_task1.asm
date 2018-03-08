@@ -18,7 +18,7 @@
 .org $000
 	; Векторы прерываний
 	rjmp INIT
-	nop
+	reti
 	rjmp BUTTON_PRESSED
 
 ; Инициализация
